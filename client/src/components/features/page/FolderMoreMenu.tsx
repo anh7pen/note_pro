@@ -163,7 +163,7 @@ export const FolderMoreMenu = ({ folder, children }: Props) => {
     const menuContent = (
         <>
             <MenuItem
-                className="flex items-center cursor-pointer"
+                className="flex items-center cursor-pointer rounded-xl"
                 onClick={(e) =>
                     handleMenuItemClick(e, () => setIsEditDialogOpen(true))
                 }>
@@ -171,12 +171,12 @@ export const FolderMoreMenu = ({ folder, children }: Props) => {
             </MenuItem>
             <Separator />
             <MenuItem
-                className="flex items-center cursor-pointer"
+                className="flex items-center cursor-pointer rounded-xl"
                 onClick={(e) => handleMenuItemClick(e, createNewDocument)}>
                 New Doc
             </MenuItem>
             <MenuItem
-                className="flex items-center cursor-pointer"
+                className="flex items-center cursor-pointer rounded-xl"
                 onClick={(e) =>
                     handleMenuItemClick(e, () => setIsNewFolderDialogOpen(true))
                 }>
@@ -184,7 +184,7 @@ export const FolderMoreMenu = ({ folder, children }: Props) => {
             </MenuItem>
             <Separator />
             <MenuItem
-                className="flex items-center cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-950 focus:bg-red-100 dark:focus:bg-red-900 focus:text-red-700 dark:focus:text-red-300"
+                className="flex items-center cursor-pointer text-red-600 hover:bg-red-50 dark:hover:bg-red-950 focus:bg-red-100 dark:focus:bg-red-900 focus:text-red-700 dark:focus:text-red-300 rounded-xl"
                 onClick={(e) =>
                     handleMenuItemClick(e, () => setIsDeleteDialogOpen(true))
                 }>

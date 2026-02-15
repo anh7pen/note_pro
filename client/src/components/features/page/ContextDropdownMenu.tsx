@@ -26,7 +26,7 @@ export const ContextDropdownMenu = ({
         return (
             <ContextMenu modal={false}>
                 <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-                <ContextMenuContent className="w-44 p-2">
+                <ContextMenuContent className="w-44 p-2 rounded-xl">
                     {menuContent}
                 </ContextMenuContent>
             </ContextMenu>
@@ -44,7 +44,7 @@ export const ContextDropdownMenu = ({
                     <CgMoreO size={18} />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-44 p-2" align={align}>
+            <DropdownMenuContent className="w-44 p-2 rounded-xl" align={align}>
                 {menuContent}
             </DropdownMenuContent>
         </DropdownMenu>

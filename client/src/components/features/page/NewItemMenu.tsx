@@ -8,13 +8,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { PlusIcon } from 'lucide-react';
-import { FiFilePlus, FiFolder } from 'react-icons/fi';
 import React, { useState } from 'react';
+import { NewDocumentIcon } from '@/components/shared/icons/NewDocumentIcon';
 import { FolderDialog, FolderMode } from './FolderDialog';
 import { useCreateDocument } from '@/hooks';
 import { useInsertFolderMutation } from '@/graphql/mutations/__generated__/folder.generated';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import showToast from '@/lib/toast';
+import { NewFolderIcon } from '@/components/shared/icons/NewFolderIcon';
 
 interface NewItemMenuProps {
     folderId?: string;
@@ -108,19 +109,35 @@ export const NewItemMenu = ({ folderId }: NewItemMenuProps) => {
                         <PlusIcon className="w-5 h-5" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-44 p-2" align="center">
+                <DropdownMenuContent
+                    className="w-60 p-2 rounded-xl"
+                    align="center">
                     <DropdownMenuItem
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-start gap-2 cursor-pointer p-2 rounded-xl"
                         onClick={handleNewDoc}
                         disabled={!canCreate || isCreating}>
-                        <FiFilePlus className="w-4 h-4" />
-                        New Doc
+                        <div className="w-12 h-12 flex-shrink-0">
+                            <NewDocumentIcon />
+                        </div>
+                        <div className="flex flex-col justify-center gap-1">
+                            <span className="font-medium">New Doc</span>
+                            <span className="text-sm text-muted-foreground">
+                                Start something new
+                            </span>
+                        </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                        className="flex items-center gap-2 cursor-pointer"
+                        className="flex items-start gap-2 cursor-pointer p-2 rounded-xl"
                         onClick={handleNewFolder}>
-                        <FiFolder className="w-4 h-4" />
-                        New Folder
+                        <div className="w-12 h-12 flex-shrink-0">
+                            <NewFolderIcon />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                            <span className="font-medium">New Folder</span>
+                            <span className="text-sm text-muted-foreground">
+                                Keep things tidy
+                            </span>
+                        </div>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>

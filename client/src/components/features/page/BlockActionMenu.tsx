@@ -100,10 +100,10 @@ export function BlockActionMenu({
                     <MoreVertical size={18} />
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-44 p-2" align="start">
+            <DropdownMenuContent className="w-44 p-2 rounded-xl" align="start">
                 {onInsertAbove && (
                     <DropdownMenuItem
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 rounded-xl"
                         onClick={onInsertAbove}>
                         <InsertBlockAboveIcon />
                         Insert Block Above
@@ -111,7 +111,7 @@ export function BlockActionMenu({
                 )}
                 {onInsertBelow && (
                     <DropdownMenuItem
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 rounded-xl"
                         onClick={onInsertBelow}>
                         <InsertBlockBelowIcon />
                         Insert Block Below
@@ -119,7 +119,7 @@ export function BlockActionMenu({
                 )}
                 {onDelete && (
                     <DropdownMenuItem
-                        className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 focus:bg-red-100 dark:focus:bg-red-900 focus:text-red-700 dark:focus:text-red-300"
+                        className="flex items-center gap-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950 focus:bg-red-100 dark:focus:bg-red-900 focus:text-red-700 dark:focus:text-red-300 rounded-xl"
                         onClick={onDelete}>
                         <RiDeleteBin6Line size={16} />
                         Delete
@@ -127,7 +127,7 @@ export function BlockActionMenu({
                 )}
                 {downloadUrl && (
                     <DropdownMenuItem
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 rounded-xl"
                         onClick={handleDownload}>
                         <FiDownload size={16} />
                         Download
