@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { HasuraModule } from 'src/hasura/hasura.module';
+import { HasuraModule } from '../hasura/hasura.module';
 import { UserService } from './user.service';
 
 @Module({
