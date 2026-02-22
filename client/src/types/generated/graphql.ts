@@ -2750,6 +2750,7 @@ export type Notifications = {
   id: Scalars['uuid']['output'];
   is_read?: Maybe<Scalars['Boolean']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
   title: Scalars['String']['output'];
   type: Scalars['String']['output'];
   /** An object relationship */
@@ -2800,6 +2801,7 @@ export type NotificationsBoolExp = {
   id?: InputMaybe<UuidComparisonExp>;
   is_read?: InputMaybe<BooleanComparisonExp>;
   message?: InputMaybe<StringComparisonExp>;
+  status?: InputMaybe<StringComparisonExp>;
   title?: InputMaybe<StringComparisonExp>;
   type?: InputMaybe<StringComparisonExp>;
   user?: InputMaybe<UsersBoolExp>;
@@ -2834,6 +2836,7 @@ export type NotificationsInsertInput = {
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_read?: InputMaybe<Scalars['Boolean']['input']>;
   message?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Scalars['String']['input']>;
   user?: InputMaybe<UsersObjRelInsertInput>;
@@ -2846,6 +2849,7 @@ export type NotificationsMaxFields = {
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['uuid']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
   type?: Maybe<Scalars['String']['output']>;
   user_id?: Maybe<Scalars['uuid']['output']>;
@@ -2857,6 +2861,7 @@ export type NotificationsMinFields = {
   created_at?: Maybe<Scalars['timestamptz']['output']>;
   id?: Maybe<Scalars['uuid']['output']>;
   message?: Maybe<Scalars['String']['output']>;
+  status?: Maybe<Scalars['String']['output']>;
   title?: Maybe<Scalars['String']['output']>;
   type?: Maybe<Scalars['String']['output']>;
   user_id?: Maybe<Scalars['uuid']['output']>;
@@ -2885,6 +2890,7 @@ export type NotificationsOrderBy = {
   id?: InputMaybe<OrderBy>;
   is_read?: InputMaybe<OrderBy>;
   message?: InputMaybe<OrderBy>;
+  status?: InputMaybe<OrderBy>;
   title?: InputMaybe<OrderBy>;
   type?: InputMaybe<OrderBy>;
   user?: InputMaybe<UsersOrderBy>;
@@ -2914,6 +2920,8 @@ export enum NotificationsSelectColumn {
   /** column name */
   Message = 'message',
   /** column name */
+  Status = 'status',
+  /** column name */
   Title = 'title',
   /** column name */
   Type = 'type',
@@ -2928,6 +2936,7 @@ export type NotificationsSetInput = {
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_read?: InputMaybe<Scalars['Boolean']['input']>;
   message?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Scalars['String']['input']>;
   user_id?: InputMaybe<Scalars['uuid']['input']>;
@@ -2948,6 +2957,7 @@ export type NotificationsStreamCursorValueInput = {
   id?: InputMaybe<Scalars['uuid']['input']>;
   is_read?: InputMaybe<Scalars['Boolean']['input']>;
   message?: InputMaybe<Scalars['String']['input']>;
+  status?: InputMaybe<Scalars['String']['input']>;
   title?: InputMaybe<Scalars['String']['input']>;
   type?: InputMaybe<Scalars['String']['input']>;
   user_id?: InputMaybe<Scalars['uuid']['input']>;
@@ -2965,6 +2975,8 @@ export enum NotificationsUpdateColumn {
   IsRead = 'is_read',
   /** column name */
   Message = 'message',
+  /** column name */
+  Status = 'status',
   /** column name */
   Title = 'title',
   /** column name */

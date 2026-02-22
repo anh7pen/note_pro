@@ -88,15 +88,7 @@ export function useDocumentPermission(documentId: string) {
         }
 
         return { canView: false, canEdit: false, permissionType: null };
-    }, [
-        documentData,
-        userId,
-        workspace,
-        accessRequestData,
-        documentId,
-        rootBlock,
-        isOwnDocument,
-    ]);
+    }, [documentData, userId, accessRequestData, rootBlock, isOwnDocument]);
 
     return permission;
 }

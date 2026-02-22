@@ -9,7 +9,7 @@ import {
 import { LogOut } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useLogout } from '@/hooks/useLogout';
-import Image from 'next/image';
+import { UserAvatar } from '@/components/shared';
 
 export const SettingButton = () => {
     const { data: session } = useSession();
@@ -19,26 +19,23 @@ export const SettingButton = () => {
         <div className="relative">
             <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                    <Image
-                        src={session?.user?.image ?? '/images/no_image.jpg'}
-                        alt="avatar"
-                        width={24}
-                        height={24}
-                        className="w-6 h-6 rounded-full cursor-pointer"
-                    />
+                    <div className="cursor-pointer">
+                        <UserAvatar
+                            avatarUrl={session?.user?.image}
+                            name={session?.user?.name}
+                            email={session?.user?.email || ''}
+                            size={24}
+                        />
+                    </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 p-2" align="end">
                     <DropdownMenuLabel>
                         <div className="flex flex-col items-center gap-2">
-                            <Image
-                                src={
-                                    session?.user?.image ??
-                                    '/images/no_image.jpg'
-                                }
-                                alt="avatar"
-                                width={32}
-                                height={32}
-                                className="w-8 h-8 rounded-full cursor-pointer"
+                            <UserAvatar
+                                avatarUrl={session?.user?.image}
+                                name={session?.user?.name}
+                                email={session?.user?.email || ''}
+                                size={32}
                             />
                             <p className="text-sm font-medium leading-none">
                                 {session?.user?.name}

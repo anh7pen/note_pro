@@ -424,13 +424,14 @@ export type mutation_rootFieldPolicy = {
 	update_workspaces_by_pk?: FieldPolicy<any> | FieldReadFunction<any>,
 	update_workspaces_many?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type notificationsKeySpecifier = ('created_at' | 'data' | 'id' | 'is_read' | 'message' | 'title' | 'type' | 'user' | 'user_id' | notificationsKeySpecifier)[];
+export type notificationsKeySpecifier = ('created_at' | 'data' | 'id' | 'is_read' | 'message' | 'status' | 'title' | 'type' | 'user' | 'user_id' | notificationsKeySpecifier)[];
 export type notificationsFieldPolicy = {
 	created_at?: FieldPolicy<any> | FieldReadFunction<any>,
 	data?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	is_read?: FieldPolicy<any> | FieldReadFunction<any>,
 	message?: FieldPolicy<any> | FieldReadFunction<any>,
+	status?: FieldPolicy<any> | FieldReadFunction<any>,
 	title?: FieldPolicy<any> | FieldReadFunction<any>,
 	type?: FieldPolicy<any> | FieldReadFunction<any>,
 	user?: FieldPolicy<any> | FieldReadFunction<any>,
@@ -447,20 +448,22 @@ export type notifications_aggregate_fieldsFieldPolicy = {
 	max?: FieldPolicy<any> | FieldReadFunction<any>,
 	min?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type notifications_max_fieldsKeySpecifier = ('created_at' | 'id' | 'message' | 'title' | 'type' | 'user_id' | notifications_max_fieldsKeySpecifier)[];
+export type notifications_max_fieldsKeySpecifier = ('created_at' | 'id' | 'message' | 'status' | 'title' | 'type' | 'user_id' | notifications_max_fieldsKeySpecifier)[];
 export type notifications_max_fieldsFieldPolicy = {
 	created_at?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	message?: FieldPolicy<any> | FieldReadFunction<any>,
+	status?: FieldPolicy<any> | FieldReadFunction<any>,
 	title?: FieldPolicy<any> | FieldReadFunction<any>,
 	type?: FieldPolicy<any> | FieldReadFunction<any>,
 	user_id?: FieldPolicy<any> | FieldReadFunction<any>
 };
-export type notifications_min_fieldsKeySpecifier = ('created_at' | 'id' | 'message' | 'title' | 'type' | 'user_id' | notifications_min_fieldsKeySpecifier)[];
+export type notifications_min_fieldsKeySpecifier = ('created_at' | 'id' | 'message' | 'status' | 'title' | 'type' | 'user_id' | notifications_min_fieldsKeySpecifier)[];
 export type notifications_min_fieldsFieldPolicy = {
 	created_at?: FieldPolicy<any> | FieldReadFunction<any>,
 	id?: FieldPolicy<any> | FieldReadFunction<any>,
 	message?: FieldPolicy<any> | FieldReadFunction<any>,
+	status?: FieldPolicy<any> | FieldReadFunction<any>,
 	title?: FieldPolicy<any> | FieldReadFunction<any>,
 	type?: FieldPolicy<any> | FieldReadFunction<any>,
 	user_id?: FieldPolicy<any> | FieldReadFunction<any>

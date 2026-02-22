@@ -78,4 +78,14 @@ query GetDocumentSharedUsers($documentId: uuid!) {
             avatar_url
         }
     }
+    blocks_by_pk(id: $documentId) {
+        id
+        user_id
+        user {
+            id
+            email
+            name
+            avatar_url
+        }
+    }
 }

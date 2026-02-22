@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { FiShare2 } from 'react-icons/fi';
 import { SharedUsersList, SharedUser } from './SharedUsersList';
 import {
@@ -15,7 +15,10 @@ import {
 } from '@/graphql/mutations/__generated__/document-share.generated';
 import { useUserId } from '@/hooks/useAuth';
 import { useDocumentPermission } from '@/hooks/useDocumentPermission';
-import { showToast } from '@/lib/toast';
+import {
+    handleMutationError,
+    handleMutationSuccess,
+} from '@/lib/error-handler';
 import { PermissionType as PermissionTypeEnum } from '@/types/types';
 
 interface ShareTabProps {
@@ -27,6 +30,7 @@ export function ShareTab({ documentId }: ShareTabProps) {
     const { permissionType } = useDocumentPermission(documentId);
     const isOwner = permissionType === PermissionTypeEnum.OWNER;
     const [sharedUsers, setSharedUsers] = useState<SharedUser[]>([]);
+    const [owner, setOwner] = useState<SharedUser | null>(null);
 
     const { data, refetch } = useGetDocumentSharedUsersQuery({
         variables: { documentId },
@@ -37,24 +41,52 @@ export function ShareTab({ documentId }: ShareTabProps) {
     const [removeAccess] = useRemoveDocumentAccessMutation();
     const [updatePermission] = useUpdateDocumentPermissionMutation();
 
+    // Transform GraphQL data to SharedUser format
+    const mapToSharedUser = useCallback(
+        (ar: NonNullable<typeof data>['access_requests'][0]): SharedUser => ({
+            id: ar.requester_id,
+            email: ar.requester?.email || '',
+            name: ar.requester?.name || undefined,
+            role: ar.permission_type === 'write' ? 'editor' : 'viewer',
+            avatar_url: ar.requester?.avatar_url || undefined,
+        }),
+        []
+    );
+
+    const mapToOwner = useCallback(
+        (
+            ownerData: NonNullable<typeof data>['blocks_by_pk']
+        ): SharedUser | null => {
+            if (!ownerData?.user) return null;
+            return {
+                id: ownerData.user.id,
+                email: ownerData.user.email,
+                name: ownerData.user.name || undefined,
+                role: 'owner',
+                avatar_url: ownerData.user.avatar_url || undefined,
+            };
+        },
+        []
+    );
+
     useEffect(() => {
         if (data?.access_requests) {
-            const users: SharedUser[] = data.access_requests.map((ar) => ({
-                id: ar.requester_id,
-                email: ar.requester?.email || '',
-                name: ar.requester?.name || undefined,
-                role: ar.permission_type === 'write' ? 'editor' : 'viewer',
-                avatar_url: ar.requester?.avatar_url || undefined,
-            }));
-            setSharedUsers(users);
+            setSharedUsers(data.access_requests.map(mapToSharedUser));
         }
-    }, [data]);
+
+        if (data?.blocks_by_pk) {
+            setOwner(mapToOwner(data.blocks_by_pk));
+        }
+    }, [data, mapToSharedUser, mapToOwner]);
+
+    const excludeUserIds = useMemo(() => {
+        const ids = sharedUsers.map((user) => user.id);
+        if (owner) ids.push(owner.id);
+        return ids;
+    }, [sharedUsers, owner]);
 
     const handleSelectUser = async (user: UserSearchResult) => {
-        const userExists = sharedUsers.some((u) => u.id === user.id);
-        if (userExists || !currentUserId) {
-            return;
-        }
+        if (!currentUserId) return;
 
         try {
             await shareDocument({
@@ -66,11 +98,10 @@ export function ShareTab({ documentId }: ShareTabProps) {
                 },
             });
 
-            showToast.success(`Shared document with ${user.email}`);
+            handleMutationSuccess(`Shared document with ${user.email}`);
             refetch();
         } catch (error) {
-            console.error('Error sharing document:', error);
-            showToast.error('Failed to share document');
+            handleMutationError(error, 'share document');
         }
     };
 
@@ -87,11 +118,10 @@ export function ShareTab({ documentId }: ShareTabProps) {
                 },
             });
 
-            showToast.success('Permission updated');
+            handleMutationSuccess('Permission updated');
             refetch();
         } catch (error) {
-            console.error('Error updating permission:', error);
-            showToast.error('Failed to update permission');
+            handleMutationError(error, 'update permission');
         }
     };
 
@@ -104,11 +134,10 @@ export function ShareTab({ documentId }: ShareTabProps) {
                 },
             });
 
-            showToast.success('Access removed');
+            handleMutationSuccess('Access removed');
             refetch();
         } catch (error) {
-            console.error('Error removing access:', error);
-            showToast.error('Failed to remove access');
+            handleMutationError(error, 'remove access');
         }
     };
 
@@ -125,17 +154,19 @@ export function ShareTab({ documentId }: ShareTabProps) {
             {isOwner && (
                 <UserEmailAutocomplete
                     onSelectUser={handleSelectUser}
-                    excludeUserIds={sharedUsers.map((user) => user.id)}
+                    excludeUserIds={excludeUserIds}
                     placeholder="Add emails to invite"
                 />
             )}
 
             <SharedUsersList
                 users={sharedUsers}
+                owner={owner}
                 onRoleChange={handleRoleChange}
                 onRemoveUser={handleRemoveUser}
                 currentUserId={currentUserId || undefined}
                 canManageUsers={isOwner}
+                isLoading={!data}
             />
         </div>
     );

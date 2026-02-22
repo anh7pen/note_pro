@@ -2,10 +2,10 @@
 
 import { Input } from '@/components/ui/input';
 import { useSearchUsersByEmailLazyQuery } from '@/graphql/queries/__generated__/user.generated';
-import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import debounce from 'lodash/debounce';
 import differenceBy from 'lodash/differenceBy';
+import { UserAvatar } from '@/components/shared';
 
 export type UserSearchResult = {
     id: string;
@@ -118,18 +118,16 @@ export function UserEmailAutocomplete({
                                     key={user.id}
                                     onClick={() => handleSelectUser(user)}
                                     className="w-full flex items-center gap-3 px-2 py-1 hover:bg-accent transition-colors text-left">
-                                    {user.avatar_url && (
-                                        <Image
-                                            src={user.avatar_url}
-                                            alt="User avatar"
-                                            className="rounded-full object-contain"
-                                            width={32}
-                                            height={32}
-                                        />
-                                    )}
+                                    <UserAvatar
+                                        avatarUrl={user.avatar_url}
+                                        name={user.name}
+                                        email={user.email || ''}
+                                    />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium truncate">
-                                            {user.name}
+                                            {user.name ||
+                                                user.email?.split('@')[0] ||
+                                                'Unknown'}
                                         </p>
                                         <p className="text-xs text-muted-foreground truncate">
                                             {user.email}

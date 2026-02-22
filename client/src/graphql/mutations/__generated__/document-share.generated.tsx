@@ -35,7 +35,7 @@ export type GetDocumentSharedUsersQueryVariables = Types.Exact<{
 }>;
 
 
-export type GetDocumentSharedUsersQuery = { __typename?: 'query_root', access_requests: Array<{ __typename?: 'access_requests', id: string, requester_id: string, permission_type?: string | null, created_at?: string | null, requester: { __typename?: 'users', id: string, email: string, name?: string | null, avatar_url?: string | null } }> };
+export type GetDocumentSharedUsersQuery = { __typename?: 'query_root', access_requests: Array<{ __typename?: 'access_requests', id: string, requester_id: string, permission_type?: string | null, created_at?: string | null, requester: { __typename?: 'users', id: string, email: string, name?: string | null, avatar_url?: string | null } }>, blocks_by_pk?: { __typename?: 'blocks', id: string, user_id?: string | null, user?: { __typename?: 'users', id: string, email: string, name?: string | null, avatar_url?: string | null } | null } | null };
 
 
 export const ShareDocumentWithUserDocument = gql`
@@ -173,6 +173,16 @@ export const GetDocumentSharedUsersDocument = gql`
     permission_type
     created_at
     requester {
+      id
+      email
+      name
+      avatar_url
+    }
+  }
+  blocks_by_pk(id: $documentId) {
+    id
+    user_id
+    user {
       id
       email
       name
