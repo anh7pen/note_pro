@@ -8,9 +8,24 @@ import { BlockType } from '@/types/types';
 import { SortableBlockItemProps } from './types';
 import { DragHandle } from './DragHandle';
 import { BlockRenderer } from './BlockRenderer';
+import { useEditor } from '@/contexts/EditorContext';
 
 export const SortableBlockItem = memo(
-    function SortableBlockItem({ block, ...props }: SortableBlockItemProps) {
+    function SortableBlockItem({ block, totalBlocks }: SortableBlockItemProps) {
+        const {
+            focusedBlock,
+            editable,
+            handleBlockFocus,
+            handleBlockBlur,
+            handleUpdateBlockContent,
+            handleAddBlock,
+            handleSaveImmediate,
+            handleDeleteBlock,
+            handleConvertToTask,
+            handleConvertToFile,
+            handleConvertToTable,
+        } = useEditor();
+
         const {
             attributes,
             listeners,
@@ -61,18 +76,13 @@ export const SortableBlockItem = memo(
         );
 
         const commonDeleteHandler =
-            props.onDeleteBlock && (props.totalBlocks ?? 0) > 1
-                ? () => props.onDeleteBlock && props.onDeleteBlock(block.id)
-                : undefined;
+            totalBlocks > 1 ? () => handleDeleteBlock(block.id) : undefined;
 
         const commonInsertHandlers = {
             onInsertAbove: () =>
-                props.onAddBlock(block.position || 0, BlockType.PARAGRAPH),
+                handleAddBlock(block.position || 0, BlockType.PARAGRAPH),
             onInsertBelow: () =>
-                props.onAddBlock(
-                    (block.position || 0) + 1,
-                    BlockType.PARAGRAPH
-                ),
+                handleAddBlock((block.position || 0) + 1, BlockType.PARAGRAPH),
         };
 
         return (
@@ -83,17 +93,17 @@ export const SortableBlockItem = memo(
                     task={task}
                     commonDeleteHandler={commonDeleteHandler}
                     commonInsertHandlers={commonInsertHandlers}
-                    focusedBlockId={props.focusedBlockId}
-                    onFocus={props.onFocus}
-                    onBlur={props.onBlur}
-                    onChange={props.onChange}
-                    onAddBlock={props.onAddBlock}
-                    onSaveImmediate={props.onSaveImmediate}
-                    editable={props.editable}
-                    onConvertToTask={props.onConvertToTask}
-                    onConvertToFile={props.onConvertToFile}
-                    onConvertToTable={props.onConvertToTable}
-                    totalBlocks={props.totalBlocks}
+                    focusedBlockId={focusedBlock}
+                    onFocus={handleBlockFocus}
+                    onBlur={handleBlockBlur}
+                    onChange={handleUpdateBlockContent}
+                    onAddBlock={handleAddBlock}
+                    onSaveImmediate={handleSaveImmediate}
+                    editable={editable}
+                    onConvertToTask={handleConvertToTask}
+                    onConvertToFile={handleConvertToFile}
+                    onConvertToTable={handleConvertToTable}
+                    totalBlocks={totalBlocks}
                 />
             </div>
         );
@@ -103,7 +113,6 @@ export const SortableBlockItem = memo(
             return false;
         }
 
-        // Deep comparison for tasks
         const prevTask = prevProps.block.tasks?.[0];
         const nextTask = nextProps.block.tasks?.[0];
         const tasksEqual =
@@ -117,8 +126,6 @@ export const SortableBlockItem = memo(
             prevProps.block.content?.text === nextProps.block.content?.text &&
             prevProps.block.position === nextProps.block.position &&
             prevProps.block.type === nextProps.block.type &&
-            prevProps.focusedBlockId === nextProps.focusedBlockId &&
-            prevProps.editable === nextProps.editable &&
             tasksEqual
         );
     }

@@ -81,14 +81,14 @@ function useEditorFocus(
 ) {
     useEffect(() => {
         if (!editor || !isFocused || editor.isFocused) return;
-        
+
         // Single RAF for smooth focus without delay
         const rafId = requestAnimationFrame(() => {
             if (!editor.isDestroyed && !editor.isFocused) {
                 editor.commands.focus('end', { scrollIntoView: false });
             }
         });
-        
+
         return () => cancelAnimationFrame(rafId);
     }, [editor, isFocused]);
 }

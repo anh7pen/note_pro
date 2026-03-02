@@ -1,6 +1,5 @@
 'use client';
 
-import { useDocumentBlocks, useDocumentPermission } from '@/hooks';
 import { TiptapWrapper } from './TiptapWrapper';
 import { PageLoading } from '@/components/ui/loading';
 import { DocumentTitleInput } from '@/components/features/page/DocumentTitleInput';
@@ -9,39 +8,24 @@ import { Separator } from '@/components/ui/separator';
 import { DocumentCover } from '@/components/features/page/DocumentCover';
 import { AddCoverButton } from '@/components/features/page/AddCoverButton';
 import { useDocumentCover } from '@/hooks/useDocumentCover';
+import { EditorProvider, useEditor } from '@/contexts/EditorContext';
 
 interface Props {
     pageId: string;
 }
 
-export default function TiptapBlockEditor({ pageId }: Props) {
-    const {
-        loading,
-        blocks,
-        rootBlock,
-        focusedBlock,
-        handleAddBlock,
-        handleUpdateBlockContent,
-        handleUpdateTitle,
-        handleBlockFocus,
-        handleBlockBlur,
-        handleSaveImmediate,
-        handleDeleteBlock,
-        handleReorderBlocks,
-        handleConvertToTask,
-        handleConvertToFile,
-        handleConvertToTable,
-    } = useDocumentBlocks(pageId);
-
-    const { canEdit } = useDocumentPermission(pageId);
+function EditorContent() {
+    const { loading, rootBlock, editable, handleUpdateTitle } = useEditor();
     const { coverImage, handleAddCover, handleRemoveCover, isUploading } =
         useDocumentCover({
             rootBlock,
         });
 
-    return loading || !rootBlock ? (
-        <PageLoading />
-    ) : (
+    if (loading || !rootBlock) {
+        return <PageLoading />;
+    }
+
+    return (
         <div className="relative h-full">
             <div className="max-w-full mx-auto w-full h-full">
                 <div className="mx-auto max-w-full bg-card overflow-hidden h-full">
@@ -56,7 +40,7 @@ export default function TiptapBlockEditor({ pageId }: Props) {
                         )}
                         <div className="mx-auto max-w-4xl py-16">
                             <div className="group flex flex-col gap-2">
-                                {!coverImage && canEdit && (
+                                {!coverImage && editable && (
                                     <div className="">
                                         <AddCoverButton
                                             onAddCover={handleAddCover}
@@ -71,28 +55,14 @@ export default function TiptapBlockEditor({ pageId }: Props) {
                                                 rootBlock.content?.title || ''
                                             }
                                             onChange={handleUpdateTitle}
-                                            editable={canEdit}
+                                            editable={editable}
                                         />
                                     </div>
                                 </div>
                             </div>
                             <Separator className="my-4" />
                             <TiptapWrapper>
-                                <BlockList
-                                    blocks={blocks}
-                                    focusedBlockId={focusedBlock}
-                                    onFocus={handleBlockFocus}
-                                    onBlur={handleBlockBlur}
-                                    onChange={handleUpdateBlockContent}
-                                    onAddBlock={handleAddBlock}
-                                    onSaveImmediate={handleSaveImmediate}
-                                    onDeleteBlock={handleDeleteBlock}
-                                    onReorder={handleReorderBlocks}
-                                    editable={canEdit}
-                                    onConvertToTask={handleConvertToTask}
-                                    onConvertToFile={handleConvertToFile}
-                                    onConvertToTable={handleConvertToTable}
-                                />
+                                <BlockList />
                             </TiptapWrapper>
                             <div className="h-[40vh]" />
                         </div>
@@ -100,5 +70,13 @@ export default function TiptapBlockEditor({ pageId }: Props) {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TiptapBlockEditor({ pageId }: Props) {
+    return (
+        <EditorProvider pageId={pageId}>
+            <EditorContent />
+        </EditorProvider>
     );
 }

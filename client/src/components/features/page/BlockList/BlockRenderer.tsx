@@ -11,9 +11,8 @@ import {
 } from '@/components/features/blocks';
 import { Block } from '@/hooks';
 import { BlockType } from '@/types/types';
-import { SortableBlockItemProps } from './types';
 
-interface BlockRendererProps extends Omit<SortableBlockItemProps, 'block'> {
+interface BlockRendererProps {
     block: Block;
     dragHandle: React.ReactNode;
     task: {
@@ -26,6 +25,24 @@ interface BlockRendererProps extends Omit<SortableBlockItemProps, 'block'> {
         onInsertAbove: () => void;
         onInsertBelow: () => void;
     };
+    focusedBlockId: string | null;
+    onFocus: (blockId: string) => void;
+    onBlur: () => void;
+    onChange: (blockId: string, value: string) => void;
+    onAddBlock: (
+        position: number,
+        type: BlockType,
+        content?: Record<string, unknown>
+    ) => Promise<void> | void;
+    onSaveImmediate: () => void;
+    editable: boolean;
+    onConvertToTask?: (blockId: string) => void;
+    onConvertToFile?: (
+        blockId: string,
+        fileData: Record<string, unknown>
+    ) => void;
+    onConvertToTable?: (blockId: string, tableHTML: string) => void;
+    totalBlocks: number;
 }
 
 export const BlockRenderer = memo(

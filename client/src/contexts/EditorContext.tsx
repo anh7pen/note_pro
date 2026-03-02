@@ -1,24 +1,159 @@
 'use client';
 
+import {
+    createContext,
+    useContext,
+    ReactNode,
+    useMemo,
+    useState,
+    useCallback,
+    useRef,
+    useEffect,
+} from 'react';
 import { Block, useBlocks, useDebounce } from '@/hooks';
-import { BlockType } from '@/types/types';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { BlockType, AccessRequestStatus, PermissionType } from '@/types/types';
+import { useGetDocumentBlocksQuery } from '@/graphql/queries/__generated__/document.generated';
 import { useCreateTaskMutation } from '@/graphql/mutations/__generated__/task.generated';
-import { TASK_STATUS } from '@/lib/constants';
+import { useGetAccessRequestByDocumentQuery } from '@/graphql/queries/__generated__/access-request.generated';
 import { useUserId } from '@/hooks/useAuth';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { TASK_STATUS } from '@/lib/constants';
 import { gql } from '@apollo/client';
 
-interface UseDocumentBlocksEditingParams {
-    initialBlocks: Block[];
-    initialRootBlock: Block | null;
+interface EditorContextValue {
+    loading: boolean;
+    blocks: Block[];
+    rootBlock: Block | null;
+    focusedBlock: string | null;
+    editable: boolean;
+    handleAddBlock: (
+        position: number,
+        type: BlockType,
+        content?: Record<string, unknown>
+    ) => Promise<void>;
+    handleUpdateBlockContent: (blockId: string, content: string) => void;
+    handleUpdateTitle: (title: string) => void;
+    handleBlockFocus: (blockId: string) => void;
+    handleBlockBlur: () => void;
+    handleSaveImmediate: () => void;
+    handleDeleteBlock: (blockId: string) => void;
+    handleReorderBlocks: (newBlocks: Block[]) => void;
+    handleConvertToTask: (blockId: string) => void;
+    handleConvertToFile: (
+        blockId: string,
+        fileData: Record<string, unknown>
+    ) => void;
+    handleConvertToTable: (blockId: string, tableHTML: string) => void;
+}
+
+const EditorContext = createContext<EditorContextValue | null>(null);
+
+interface EditorProviderProps {
+    children: ReactNode;
     pageId: string;
 }
 
-export function useDocumentBlocksEditing({
-    initialBlocks,
-    initialRootBlock,
-    pageId,
-}: UseDocumentBlocksEditingParams) {
+function isBlock(item: unknown): item is Block {
+    return (
+        typeof item === 'object' &&
+        item !== null &&
+        'id' in item &&
+        'type' in item &&
+        typeof (item as Block).id === 'string'
+    );
+}
+
+function processDocumentBlocks(
+    blocks: readonly unknown[] | undefined,
+    pageId: string
+): { processedBlocks: Block[]; processedRootBlock: Block | null } {
+    if (!blocks || blocks.length === 0) {
+        return { processedBlocks: [], processedRootBlock: null };
+    }
+
+    const validBlocks = blocks.filter(isBlock);
+
+    const root =
+        validBlocks.find(
+            (block) => block.id === pageId && block.type === BlockType.PAGE
+        ) ?? null;
+
+    const childBlocksRaw = validBlocks
+        .filter(
+            (block) => block.page_id === pageId && block.type !== BlockType.PAGE
+        )
+        .sort((a, b) => {
+            const positionA = a.position ?? 0;
+            const positionB = b.position ?? 0;
+            if (positionA !== positionB) return positionA - positionB;
+
+            const isTaskA = a.type === BlockType.TASK;
+            const isTaskB = b.type === BlockType.TASK;
+            if (isTaskA && !isTaskB) return -1;
+            if (!isTaskA && isTaskB) return 1;
+            return 0;
+        });
+
+    const seen = new Set<string>();
+    const childBlocks = childBlocksRaw.filter((b) => {
+        if (seen.has(b.id)) return false;
+        seen.add(b.id);
+        return true;
+    });
+
+    return { processedBlocks: childBlocks, processedRootBlock: root };
+}
+
+function useDocumentPermission(
+    pageId: string,
+    rootBlock: Block | null,
+    hasData: boolean
+) {
+    const userId = useUserId();
+    const { workspace } = useWorkspace();
+
+    const isOwnDocument = rootBlock?.workspace_id === workspace?.id;
+
+    const { data: accessRequestData } = useGetAccessRequestByDocumentQuery({
+        variables: { documentId: pageId, requesterId: userId ?? '' },
+        skip: !pageId || !userId || !rootBlock || isOwnDocument,
+        fetchPolicy: 'cache-first',
+    });
+
+    return useMemo(() => {
+        if (!hasData || !userId || !rootBlock) return false;
+        if (isOwnDocument) return true;
+
+        const accessRequests = accessRequestData?.access_requests ?? [];
+        const approvedRequest = accessRequests.find(
+            (req) => req.status === AccessRequestStatus.APPROVED
+        );
+
+        return approvedRequest?.permission_type === PermissionType.WRITE;
+    }, [hasData, userId, rootBlock, isOwnDocument, accessRequestData]);
+}
+
+export function EditorProvider({ children, pageId }: EditorProviderProps) {
+    const userId = useUserId();
+
+    const { data, loading } = useGetDocumentBlocksQuery({
+        variables: { pageId },
+        skip: !pageId,
+        fetchPolicy: 'cache-first',
+        nextFetchPolicy: 'cache-first',
+    });
+
+    const { processedBlocks, processedRootBlock } = useMemo(
+        () => processDocumentBlocks(data?.blocks, pageId),
+        [data?.blocks, pageId]
+    );
+
+    const canEdit = useDocumentPermission(
+        pageId,
+        processedRootBlock,
+        Boolean(data?.blocks)
+    );
+
     const {
         createBlockWithPositionUpdate,
         updateBlockContent,
@@ -28,21 +163,20 @@ export function useDocumentBlocksEditing({
     } = useBlocks();
     const { debounced, flush } = useDebounce(300);
     const [createTask] = useCreateTaskMutation();
-    const userId = useUserId();
 
-    const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
-    const [rootBlock, setRootBlock] = useState<Block | null>(initialRootBlock);
+    const [blocks, setBlocks] = useState<Block[]>([]);
+    const [rootBlock, setRootBlock] = useState<Block | null>(null);
     const [focusedBlock, setFocusedBlock] = useState<string | null>(null);
     const isCreatingBlockRef = useRef(false);
     const isDeletingBlockRef = useRef(false);
 
     useEffect(() => {
-        setBlocks(initialBlocks);
-    }, [initialBlocks]);
+        setBlocks(processedBlocks);
+    }, [processedBlocks]);
 
     useEffect(() => {
-        setRootBlock(initialRootBlock);
-    }, [initialRootBlock]);
+        setRootBlock(processedRootBlock);
+    }, [processedRootBlock]);
 
     const handleAddBlock = useCallback(
         async (
@@ -52,7 +186,7 @@ export function useDocumentBlocksEditing({
         ) => {
             isCreatingBlockRef.current = true;
 
-            const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
             const now = new Date().toISOString();
 
             const optimisticBlock: Block = {
@@ -66,15 +200,15 @@ export function useDocumentBlocksEditing({
                 tasks: [],
             };
 
-            // Add optimistic block and focus immediately
             setBlocks((prev) => {
-                const updated = prev.map((b) =>
-                    (b.position || 0) >= position
-                        ? { ...b, position: (b.position || 0) + 1 }
-                        : b
-                );
+                const updated = prev.map((b) => {
+                    const currentPosition = b.position ?? 0;
+                    return currentPosition >= position
+                        ? { ...b, position: currentPosition + 1 }
+                        : b;
+                });
                 return [...updated, optimisticBlock].sort(
-                    (a, b) => (a.position || 0) - (b.position || 0)
+                    (a, b) => (a.position ?? 0) - (b.position ?? 0)
                 );
             });
 
@@ -104,14 +238,10 @@ export function useDocumentBlocksEditing({
         (blockId: string, content: string) => {
             setBlocks((prev) => {
                 const block = prev.find((b) => b.id === blockId);
-                if (!block || block.type === BlockType.PAGE) {
-                    return prev;
-                }
+                if (!block || block.type === BlockType.PAGE) return prev;
 
-                const currentText = block.content?.text || '';
-                if (currentText === content) {
-                    return prev;
-                }
+                const currentText = block.content?.text ?? '';
+                if (currentText === content) return prev;
 
                 return prev.map((b) =>
                     b.id === blockId
@@ -129,28 +259,14 @@ export function useDocumentBlocksEditing({
 
     const handleUpdateTitle = useCallback(
         (title: string) => {
-            if (rootBlock) {
-                setRootBlock((prev) =>
-                    prev
-                        ? { ...prev, content: { ...prev.content, title } }
-                        : null
-                );
-                debounced(async () => {
-                    await updateBlockContent(rootBlock.id, { title });
-                }, `title-${rootBlock.id}`);
-            }
-        },
-        [rootBlock, debounced, updateBlockContent]
-    );
+            if (!rootBlock) return;
 
-    const handleUpdateRootBlockContent = useCallback(
-        (content: Record<string, unknown>) => {
-            if (rootBlock) {
-                setRootBlock((prev) => (prev ? { ...prev, content } : null));
-                debounced(async () => {
-                    await updateBlockContent(rootBlock.id, content);
-                }, `rootblock-${rootBlock.id}`);
-            }
+            setRootBlock((prev) =>
+                prev ? { ...prev, content: { ...prev.content, title } } : null
+            );
+            debounced(async () => {
+                await updateBlockContent(rootBlock.id, { title });
+            }, `title-${rootBlock.id}`);
         },
         [rootBlock, debounced, updateBlockContent]
     );
@@ -160,22 +276,18 @@ export function useDocumentBlocksEditing({
     }, []);
 
     const handleBlockBlur = useCallback(() => {
-        // Don't blur if we're in the process of creating or deleting a block
         if (!isCreatingBlockRef.current && !isDeletingBlockRef.current) {
             setFocusedBlock(null);
         }
     }, []);
 
     const handleSaveImmediate = useCallback(() => {
-        // Don't await - let it run in background
         flush();
     }, [flush]);
 
     const handleDeleteBlock = useCallback(
         (blockId: string) => {
-            if (blocks.length <= 1) {
-                return;
-            }
+            if (blocks.length <= 1) return;
 
             isDeletingBlockRef.current = true;
 
@@ -196,7 +308,7 @@ export function useDocumentBlocksEditing({
     );
 
     const handleReorderBlocks = useCallback(
-        async (newBlocks: Block[]) => {
+        (newBlocks: Block[]) => {
             setBlocks((prevBlocks) => {
                 const updates = newBlocks
                     .map((block, idx) => ({ id: block.id, position: idx }))
@@ -219,9 +331,7 @@ export function useDocumentBlocksEditing({
 
     const handleConvertToTask = useCallback(
         async (blockId: string) => {
-            if (!userId) {
-                return;
-            }
+            if (!userId) return;
 
             flush();
 
@@ -230,9 +340,7 @@ export function useDocumentBlocksEditing({
                     blockId,
                     BlockType.TASK
                 );
-                if (!updatedBlock) {
-                    return;
-                }
+                if (!updatedBlock) return;
 
                 const taskResult = await createTask({
                     variables: {
@@ -242,10 +350,10 @@ export function useDocumentBlocksEditing({
                             status: TASK_STATUS.TODO,
                         },
                     },
-                    update: (cache, { data }) => {
-                        if (!data?.insert_tasks_one) return;
+                    update: (cache, { data: mutationData }) => {
+                        const newTask = mutationData?.insert_tasks_one;
+                        if (!newTask) return;
 
-                        // Update the block in cache to include the new task
                         cache.modify({
                             id: cache.identify({
                                 __typename: 'blocks',
@@ -254,7 +362,7 @@ export function useDocumentBlocksEditing({
                             fields: {
                                 tasks(existingTasks = []) {
                                     const newTaskRef = cache.writeFragment({
-                                        data: data.insert_tasks_one,
+                                        data: newTask,
                                         fragment: gql`
                                             fragment NewTask on tasks {
                                                 id
@@ -277,16 +385,15 @@ export function useDocumentBlocksEditing({
                     },
                 });
 
-                if (taskResult.data?.insert_tasks_one) {
+                const newTask = taskResult.data?.insert_tasks_one;
+                if (newTask) {
                     setBlocks((prev) =>
                         prev.map((b) =>
                             b.id === blockId
                                 ? {
                                       ...b,
                                       type: BlockType.TASK,
-                                      tasks: [
-                                          taskResult.data!.insert_tasks_one!,
-                                      ],
+                                      tasks: [newTask],
                                   }
                                 : b
                         )
@@ -304,27 +411,18 @@ export function useDocumentBlocksEditing({
             flush();
 
             try {
-                // Update block type to FILE
                 const updatedBlock = await updateBlockType(
                     blockId,
                     BlockType.FILE
                 );
-                if (!updatedBlock) {
-                    return;
-                }
+                if (!updatedBlock) return;
 
-                // Update block content with file data
                 await updateBlockContent(blockId, fileData);
 
-                // Update local state
                 setBlocks((prev) =>
                     prev.map((b) =>
                         b.id === blockId
-                            ? {
-                                  ...b,
-                                  type: BlockType.FILE,
-                                  content: fileData,
-                              }
+                            ? { ...b, type: BlockType.FILE, content: fileData }
                             : b
                     )
                 );
@@ -340,19 +438,14 @@ export function useDocumentBlocksEditing({
             flush();
 
             try {
-                // Update block type to TABLE
                 const updatedBlock = await updateBlockType(
                     blockId,
                     BlockType.TABLE
                 );
-                if (!updatedBlock) {
-                    return;
-                }
+                if (!updatedBlock) return;
 
-                // Update block content with table HTML
                 await updateBlockContent(blockId, { text: tableHTML });
 
-                // Update local state
                 setBlocks((prev) =>
                     prev.map((b) =>
                         b.id === blockId
@@ -371,21 +464,56 @@ export function useDocumentBlocksEditing({
         [updateBlockType, updateBlockContent, flush]
     );
 
-    return {
-        blocks,
-        rootBlock,
-        focusedBlock,
-        handleAddBlock,
-        handleUpdateBlockContent,
-        handleUpdateTitle,
-        handleUpdateRootBlockContent,
-        handleBlockFocus,
-        handleBlockBlur,
-        handleSaveImmediate,
-        handleDeleteBlock,
-        handleReorderBlocks,
-        handleConvertToTask,
-        handleConvertToFile,
-        handleConvertToTable,
-    };
+    const value = useMemo(
+        () => ({
+            loading,
+            blocks,
+            rootBlock,
+            focusedBlock,
+            editable: canEdit,
+            handleAddBlock,
+            handleUpdateBlockContent,
+            handleUpdateTitle,
+            handleBlockFocus,
+            handleBlockBlur,
+            handleSaveImmediate,
+            handleDeleteBlock,
+            handleReorderBlocks,
+            handleConvertToTask,
+            handleConvertToFile,
+            handleConvertToTable,
+        }),
+        [
+            loading,
+            blocks,
+            rootBlock,
+            focusedBlock,
+            canEdit,
+            handleAddBlock,
+            handleUpdateBlockContent,
+            handleUpdateTitle,
+            handleBlockFocus,
+            handleBlockBlur,
+            handleSaveImmediate,
+            handleDeleteBlock,
+            handleReorderBlocks,
+            handleConvertToTask,
+            handleConvertToFile,
+            handleConvertToTable,
+        ]
+    );
+
+    return (
+        <EditorContext.Provider value={value}>
+            {children}
+        </EditorContext.Provider>
+    );
+}
+
+export function useEditor() {
+    const context = useContext(EditorContext);
+    if (!context) {
+        throw new Error('useEditor must be used within EditorProvider');
+    }
+    return context;
 }
