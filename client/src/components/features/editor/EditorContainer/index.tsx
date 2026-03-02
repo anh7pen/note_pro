@@ -96,7 +96,8 @@ export const EditorContainer = memo(
                     'border border-transparent',
                     'hover:border-gray-300',
                     'focus-within:border-gray-300',
-                    'transition-all duration-200 hover:shadow-md'
+                    'transition-shadow duration-200 hover:shadow-md',
+                    'will-change-auto'
                 ),
             []
         );

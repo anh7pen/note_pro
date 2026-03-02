@@ -23,6 +23,7 @@ export function useSlashCommand(
         onDeleteBlock,
         position = 0,
         isTitle = false,
+        totalBlocks = 1,
     }: SlashCommandOptions = {}
 ) {
     const { state, updateState } = useMenuState();
@@ -58,6 +59,7 @@ export function useSlashCommand(
         onConvertToTask,
         onDeleteBlock,
         blockId,
+        totalBlocks,
     });
 
     const menus = useMemo(

@@ -70,6 +70,7 @@ export function BlockList({
         onConvertToFile,
         onConvertToTable,
     });
+    
     // Update refs on each render (cheap operation)
     callbacksRef.current = {
         onFocus,

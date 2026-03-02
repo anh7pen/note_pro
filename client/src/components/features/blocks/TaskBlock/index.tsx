@@ -22,6 +22,7 @@ export const TaskBlock = memo(
         onConvertToFile,
         onConvertToTable,
         task,
+        totalBlocks,
     }: TaskBlockProps) {
         return (
             <TiptapEditor
@@ -46,6 +47,7 @@ export const TaskBlock = memo(
                 onConvertToTask={onConvertToTask}
                 onConvertToFile={onConvertToFile}
                 onConvertToTable={onConvertToTable}
+                totalBlocks={totalBlocks}
             />
         );
     },

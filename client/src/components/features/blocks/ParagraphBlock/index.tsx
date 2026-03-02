@@ -21,6 +21,7 @@ export const ParagraphBlock = memo(
         onConvertToTask,
         onConvertToFile,
         onConvertToTable,
+        totalBlocks,
     }: TextBlockProps) {
         return (
             <TiptapEditor
@@ -45,6 +46,7 @@ export const ParagraphBlock = memo(
                 onConvertToTask={onConvertToTask}
                 onConvertToFile={onConvertToFile}
                 onConvertToTable={onConvertToTable}
+                totalBlocks={totalBlocks}
             />
         );
     },

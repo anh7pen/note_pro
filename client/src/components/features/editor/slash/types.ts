@@ -22,6 +22,7 @@ export interface SlashCommandOptions {
     onDeleteBlock?: () => void;
     position?: number;
     isTitle?: boolean;
+    totalBlocks?: number;
 }
 
 export interface CommandHandlers {

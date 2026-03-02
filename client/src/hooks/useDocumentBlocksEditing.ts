@@ -2,7 +2,7 @@
 
 import { Block, useBlocks, useDebounce } from '@/hooks';
 import { BlockType } from '@/types/types';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCreateTaskMutation } from '@/graphql/mutations/__generated__/task.generated';
 import { TASK_STATUS } from '@/lib/constants';
 import { useUserId } from '@/hooks/useAuth';
@@ -33,6 +33,8 @@ export function useDocumentBlocksEditing({
     const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
     const [rootBlock, setRootBlock] = useState<Block | null>(initialRootBlock);
     const [focusedBlock, setFocusedBlock] = useState<string | null>(null);
+    const isCreatingBlockRef = useRef(false);
+    const isDeletingBlockRef = useRef(false);
 
     useEffect(() => {
         setBlocks(initialBlocks);
@@ -48,7 +50,8 @@ export function useDocumentBlocksEditing({
             type: BlockType = BlockType.PARAGRAPH,
             content: Record<string, unknown> = { text: '' }
         ) => {
-            // Generate optimistic ID for immediate UI feedback
+            isCreatingBlockRef.current = true;
+
             const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             const now = new Date().toISOString();
 
@@ -63,6 +66,7 @@ export function useDocumentBlocksEditing({
                 tasks: [],
             };
 
+            // Add optimistic block and focus immediately
             setBlocks((prev) => {
                 const updated = prev.map((b) =>
                     (b.position || 0) >= position
@@ -75,7 +79,6 @@ export function useDocumentBlocksEditing({
             });
 
             setFocusedBlock(optimisticId);
-
             flush();
 
             const newBlock = await createBlockWithPositionUpdate(
@@ -85,12 +88,14 @@ export function useDocumentBlocksEditing({
                 content
             );
 
-            if (newBlock && newBlock.id !== optimisticId) {
+            if (newBlock) {
                 setBlocks((prev) =>
                     prev.map((b) => (b.id === optimisticId ? newBlock : b))
                 );
                 setFocusedBlock(newBlock.id);
             }
+
+            isCreatingBlockRef.current = false;
         },
         [createBlockWithPositionUpdate, pageId, flush]
     );
@@ -155,7 +160,10 @@ export function useDocumentBlocksEditing({
     }, []);
 
     const handleBlockBlur = useCallback(() => {
-        setFocusedBlock(null);
+        // Don't blur if we're in the process of creating or deleting a block
+        if (!isCreatingBlockRef.current && !isDeletingBlockRef.current) {
+            setFocusedBlock(null);
+        }
     }, []);
 
     const handleSaveImmediate = useCallback(() => {
@@ -165,24 +173,24 @@ export function useDocumentBlocksEditing({
 
     const handleDeleteBlock = useCallback(
         (blockId: string) => {
-            // Find the previous block BEFORE removing
+            if (blocks.length <= 1) {
+                return;
+            }
+
+            isDeletingBlockRef.current = true;
+
             const currentIndex = blocks.findIndex((b) => b.id === blockId);
             const previousBlock =
                 currentIndex > 0 ? blocks[currentIndex - 1] : null;
 
-            // Optimistically remove from local state IMMEDIATELY
             setBlocks((prev) => prev.filter((b) => b.id !== blockId));
 
-            // Focus previous block immediately
             if (previousBlock) {
                 setFocusedBlock(previousBlock.id);
             }
 
-            // Delete on server in background (don't await)
-            removeBlock(blockId).catch((error) => {
-                console.error('Failed to delete block:', error);
-                // Optionally: restore block to state on failure
-            });
+            isDeletingBlockRef.current = false;
+            removeBlock(blockId);
         },
         [removeBlock, blocks]
     );

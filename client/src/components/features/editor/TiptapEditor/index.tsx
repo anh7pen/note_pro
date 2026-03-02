@@ -55,6 +55,7 @@ interface TiptapEditorProps {
     ) => void;
     onConvertToTable?: (blockId: string, tableHTML: string) => void;
     dragHandle?: React.ReactNode;
+    totalBlocks?: number;
 }
 
 function useEditorContentSync(
@@ -79,11 +80,16 @@ function useEditorFocus(
     isFocused: boolean
 ) {
     useEffect(() => {
-        if (editor && isFocused) {
-            requestAnimationFrame(() => {
+        if (!editor || !isFocused || editor.isFocused) return;
+        
+        // Single RAF for smooth focus without delay
+        const rafId = requestAnimationFrame(() => {
+            if (!editor.isDestroyed && !editor.isFocused) {
                 editor.commands.focus('end', { scrollIntoView: false });
-            });
-        }
+            }
+        });
+        
+        return () => cancelAnimationFrame(rafId);
     }, [editor, isFocused]);
 }
 
@@ -169,6 +175,7 @@ export const TiptapEditor = memo(
         onConvertToFile,
         onConvertToTable,
         dragHandle,
+        totalBlocks = 1,
     }: TiptapEditorProps) {
         const [isUpdating, setIsUpdating] = useState(false);
         const [isUploading, setIsUploading] = useState(false);
@@ -209,6 +216,7 @@ export const TiptapEditor = memo(
             position,
             onToggleUploading: setIsUploading,
             isTitle,
+            totalBlocks,
         });
 
         useEditorContentSync(editor, value, prevValueRef);

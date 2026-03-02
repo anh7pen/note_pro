@@ -45,6 +45,7 @@ export function useSlashKeyHandler(
         onConvertToTask,
         onDeleteBlock,
         blockId,
+        totalBlocks = 1,
     }: {
         state: SlashCommandState;
         updateState: (updates: Partial<SlashCommandState>) => void;
@@ -52,6 +53,7 @@ export function useSlashKeyHandler(
         onConvertToTask?: (blockId: string) => void;
         onDeleteBlock?: () => void;
         blockId?: string;
+        totalBlocks?: number;
     }
 ) {
     return useCallback(
@@ -79,7 +81,7 @@ export function useSlashKeyHandler(
             }
 
             // Handle backspace to delete empty block
-            if (event.key === 'Backspace' && onDeleteBlock) {
+            if (event.key === 'Backspace' && onDeleteBlock && totalBlocks > 1) {
                 const { state: editorState } = view;
                 const { $from } = editorState.selection;
                 const textContent = editorState.doc.textContent;
@@ -142,6 +144,7 @@ export function useSlashKeyHandler(
             onConvertToTask,
             onDeleteBlock,
             blockId,
+            totalBlocks,
             updateState,
         ]
     );

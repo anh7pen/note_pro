@@ -45,6 +45,7 @@ export const BlockRenderer = memo(
         onConvertToTask,
         onConvertToFile,
         onConvertToTable,
+        totalBlocks,
     }: BlockRendererProps) {
         const commonProps = {
             block,
@@ -65,6 +66,7 @@ export const BlockRenderer = memo(
             onConvertToTask,
             onConvertToFile,
             onConvertToTable,
+            totalBlocks,
         };
 
         switch (block.type) {

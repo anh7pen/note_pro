@@ -93,6 +93,7 @@ export const SortableBlockItem = memo(
                     onConvertToTask={props.onConvertToTask}
                     onConvertToFile={props.onConvertToFile}
                     onConvertToTable={props.onConvertToTable}
+                    totalBlocks={props.totalBlocks}
                 />
             </div>
         );

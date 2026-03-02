@@ -28,6 +28,7 @@ export interface TextBlockProps extends BaseBlockProps {
         fileData: Record<string, unknown>
     ) => void;
     onConvertToTable?: (blockId: string, tableHTML: string) => void;
+    totalBlocks?: number;
 }
 
 export interface TaskBlockProps extends TextBlockProps {
