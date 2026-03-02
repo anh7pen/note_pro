@@ -10,6 +10,7 @@ import {
     useRef,
     useEffect,
 } from 'react';
+import { flushSync } from 'react-dom';
 import { Block, useBlocks, useDebounce } from '@/hooks';
 import { BlockType, AccessRequestStatus, PermissionType } from '@/types/types';
 import { useGetDocumentBlocksQuery } from '@/graphql/queries/__generated__/document.generated';
@@ -185,34 +186,6 @@ export function EditorProvider({ children, pageId }: EditorProviderProps) {
             content: Record<string, unknown> = { text: '' }
         ) => {
             isCreatingBlockRef.current = true;
-
-            const optimisticId = `temp-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-            const now = new Date().toISOString();
-
-            const optimisticBlock: Block = {
-                id: optimisticId,
-                content,
-                position,
-                page_id: pageId,
-                type,
-                created_at: now,
-                updated_at: now,
-                tasks: [],
-            };
-
-            setBlocks((prev) => {
-                const updated = prev.map((b) => {
-                    const currentPosition = b.position ?? 0;
-                    return currentPosition >= position
-                        ? { ...b, position: currentPosition + 1 }
-                        : b;
-                });
-                return [...updated, optimisticBlock].sort(
-                    (a, b) => (a.position ?? 0) - (b.position ?? 0)
-                );
-            });
-
-            setFocusedBlock(optimisticId);
             flush();
 
             const newBlock = await createBlockWithPositionUpdate(
@@ -223,10 +196,9 @@ export function EditorProvider({ children, pageId }: EditorProviderProps) {
             );
 
             if (newBlock) {
-                setBlocks((prev) =>
-                    prev.map((b) => (b.id === optimisticId ? newBlock : b))
-                );
-                setFocusedBlock(newBlock.id);
+                requestAnimationFrame(() => {
+                    setFocusedBlock(newBlock.id);
+                });
             }
 
             isCreatingBlockRef.current = false;
